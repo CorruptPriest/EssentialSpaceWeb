@@ -2,9 +2,25 @@
     --bg-color: #000000;
     --text-color: #FFFFFF;
     --accent-color: #D71921;
+    --accent-red: #D71921;
+    --accent-yellow: #C8A005;
+    /* Deeper, darker yellow */
     --widget-bg: #141414;
+    --item-bg: #0a0a0a;
+    --preview-bg: #111111;
     --border-color: #333333;
     --font-main: 'Share Tech Mono', monospace;
+}
+
+[data-theme="light"] {
+    --bg-color: #EAEAEA;
+    /* Slightly darker white for better contrast */
+    --text-color: #000000;
+    --widget-bg: #FFFFFF;
+    --item-bg: #FFFFFF;
+    --preview-bg: #F5F5F5;
+    --border-color: #000000;
+    /* Sharp black borders for light mode */
 }
 
 * {
@@ -186,7 +202,7 @@ header {
 }
 
 .memory-item {
-    background-color: #0a0a0a;
+    background-color: var(--item-bg);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 15px;
@@ -222,7 +238,7 @@ header {
     object-fit: cover;
     border-radius: 4px;
     margin-bottom: 5px;
-    background-color: #111;
+    background-color: var(--preview-bg);
 }
 
 .item-left {
@@ -253,30 +269,116 @@ header {
     text-align: right;
 }
 
-/* FAB */
-.fab {
+/* FAB Container */
+.fab-container {
     position: fixed;
     bottom: 40px;
     right: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 15px;
+    z-index: 100;
+}
+
+.fab {
+    position: relative;
+    bottom: auto;
+    right: auto;
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background-color: var(--accent-color);
-    color: var(--text-color);
     border: none;
     font-size: 32px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 15px rgba(215, 25, 33, 0.4);
     transition: transform 0.2s, background-color 0.2s;
-    z-index: 100;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.fab.primary {
+    background-color: var(--accent-color);
+    color: var(--bg-color);
+    /* Inverted for contrast */
+}
+
+.fab.secondary {
+    background-color: var(--widget-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    font-size: 24px;
 }
 
 .fab:hover {
     transform: scale(1.1);
-    background-color: #ff1f29;
+}
+
+/* Settings Menu */
+.settings-menu {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 15px;
+    background-color: var(--widget-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 15px;
+    width: 200px;
+    display: none;
+    /* Hidden by default */
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.settings-menu.active {
+    display: flex;
+}
+
+.settings-header {
+    font-size: 14px;
+    color: var(--accent-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.setting-item label {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.toggle-group {
+    display: flex;
+    gap: 10px;
+}
+
+.toggle-btn {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: #666;
+    padding: 6px;
+    font-family: var(--font-main);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+    border-color: var(--text-color);
+    color: var(--text-color);
+}
+
+.toggle-btn.active {
+    background-color: var(--accent-color);
+    color: var(--bg-color);
+    border-color: var(--accent-color);
+    font-weight: bold;
 }
 
 /* Modals */

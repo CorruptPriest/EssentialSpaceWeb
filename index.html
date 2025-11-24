@@ -42,7 +42,7 @@
                 <section class="memory-section">
                     <h2 class="section-title">MEMORY</h2>
                     <div class="memory-list" id="memoryList">
-                        <!-- Naman Here, Items will be injected by JS -->
+                        <!-- Items will be injected by JS -->
                     </div>
                 </section>
             </main>
@@ -51,12 +51,32 @@
                 <h3 class="sidebar-title">FILTERS</h3>
                 <ul id="tagFilterList">
                     <li class="active" data-tag="all">ALL</li>
-                    <!-- Naman Here, Tags injected by JS -->
+                    <!-- Tags injected by JS -->
                 </ul>
             </aside>
         </div>
 
-        <button class="fab" id="addBtn">+</button>
+        <div class="fab-container">
+            <div class="settings-menu" id="settingsMenu">
+                <div class="settings-header">SETTINGS</div>
+                <div class="setting-item">
+                    <label>ACCENT</label>
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-setting="accent" data-value="red">RED</button>
+                        <button class="toggle-btn" data-setting="accent" data-value="yellow">YEL</button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>THEME</label>
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-setting="theme" data-value="dark">DRK</button>
+                        <button class="toggle-btn" data-setting="theme" data-value="light">LGT</button>
+                    </div>
+                </div>
+            </div>
+            <button class="fab secondary" id="settingsBtn">☰</button>
+            <button class="fab primary" id="addBtn">+</button>
+        </div>
 
         <!-- Add Note Modal -->
         <div class="modal-overlay" id="addModal">

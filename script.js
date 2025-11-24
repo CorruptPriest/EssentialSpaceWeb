@@ -441,4 +441,84 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (e.target === addModal) addModal.classList.remove('active');
         if (e.target === viewModal) viewModal.classList.remove('active');
     });
+
+    // --- Settings & Theme Logic ---
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsMenu = document.getElementById('settingsMenu');
+    const toggleBtns = document.querySelectorAll('.toggle-btn');
+
+    // Toggle Settings Menu
+    settingsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        settingsMenu.classList.toggle('active');
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!settingsMenu.contains(e.target) && e.target !== settingsBtn) {
+            settingsMenu.classList.remove('active');
+        }
+    });
+
+    // Handle Toggles
+    toggleBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const setting = btn.dataset.setting;
+            const value = btn.dataset.value;
+
+            // Update UI
+            const group = btn.parentElement;
+            group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Apply Setting
+            if (setting === 'theme') {
+                applyTheme(value);
+            } else if (setting === 'accent') {
+                applyAccent(value);
+            }
+        });
+    });
+
+    function applyTheme(theme) {
+        if (theme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+        localStorage.setItem('essential_theme', theme);
+    }
+
+    function applyAccent(accent) {
+        const root = document.documentElement;
+        if (accent === 'yellow') {
+            root.style.setProperty('--accent-color', 'var(--accent-yellow)');
+        } else {
+            root.style.setProperty('--accent-color', 'var(--accent-red)');
+        }
+        localStorage.setItem('essential_accent', accent);
+    }
+
+    // Load Preferences
+    function loadPreferences() {
+        const savedTheme = localStorage.getItem('essential_theme') || 'dark';
+        const savedAccent = localStorage.getItem('essential_accent') || 'red';
+
+        // Apply saved values
+        applyTheme(savedTheme);
+        applyAccent(savedAccent);
+
+        // Update UI state
+        // Reset all first
+        document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+
+        // Set active
+        const themeBtn = document.querySelector(`.toggle-btn[data-setting="theme"][data-value="${savedTheme}"]`);
+        if (themeBtn) themeBtn.classList.add('active');
+
+        const accentBtn = document.querySelector(`.toggle-btn[data-setting="accent"][data-value="${savedAccent}"]`);
+        if (accentBtn) accentBtn.classList.add('active');
+    }
+
+    loadPreferences();
 });
