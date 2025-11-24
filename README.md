@@ -29,7 +29,9 @@ To run this project, you only need a modern web browser. No complex installation
 *   **Google Chrome** (Recommended)
 *   **Mozilla Firefox**
 *   **Microsoft Edge**
-*   **Safari**(based on chromium so it should ideally work)
+*   **Arc**
+*   **Zen**
+*   **Safari**(based on chromium so it should ideally work)(It basically works on any browser tbh)
 
 ## 🚀 Getting Started
 
