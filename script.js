@@ -143,14 +143,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 previewHtml = `<img src="${item.imageData}" class="item-image-preview">`;
             }
 
-            let pinHtml = item.isPinned ? '<div class="pin-indicator">📌</div>' : '';
+            let pinHtml = item.isPinned ? '<div class="pinned-badge">PINNED</div>' : '';
 
             itemEl.innerHTML = `
                 ${pinHtml}
                 ${previewHtml}
                 <div class="item-left">
                     <span class="item-type">${item.type}</span>
-                    <span class="item-content">${item.content || (item.imageData ? 'Image Attachment' : 'Empty')}</span>
+                    ${item.type === '[VOICE]' && item.audioBlob ? `
+                        <div class="audio-player-custom">
+                            <button class="audio-play-btn" onclick="event.stopPropagation(); const audio = this.nextElementSibling; audio.paused ? audio.play() : audio.pause();">▶</button>
+                            <audio src="${URL.createObjectURL(item.audioBlob)}" onended="this.previousElementSibling.textContent='▶'" onplay="this.previousElementSibling.textContent='⏸'" onpause="this.previousElementSibling.textContent='▶'"></audio>
+                            <div class="audio-wave"></div>
+                        </div>
+                        ${item.transcript ? `<button class="transcribe-btn" onclick="event.stopPropagation(); this.nextElementSibling.classList.toggle('visible')">Transcribe</button><div class="transcript-text">${item.transcript}</div>` : ''}
+                    ` : `<span class="item-content">${item.content || (item.imageData ? 'Image Attachment' : 'Empty')}</span>`}
                 </div>
                 <span class="item-time">${timeString}</span>
             `;
@@ -206,32 +213,49 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Voice Dictation
     if ('webkitSpeechRecognition' in window) {
-        const recognition = new webkitSpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
+        const dictationRecognition = new webkitSpeechRecognition();
+        dictationRecognition.continuous = true;
+        dictationRecognition.interimResults = true;
+        let isDictating = false;
 
         micBtn.addEventListener('click', () => {
-            if (micBtn.classList.contains('recording')) {
-                recognition.stop();
+            if (isDictating) {
+                dictationRecognition.stop();
+                isDictating = false;
+                micBtn.classList.remove('recording');
             } else {
-                recognition.start();
+                dictationRecognition.start();
+                isDictating = true;
                 micBtn.classList.add('recording');
             }
         });
 
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            noteContent.value += (noteContent.value ? ' ' : '') + transcript;
-            micBtn.classList.remove('recording');
+        dictationRecognition.onresult = (event) => {
+            let interimTranscript = '';
+            let finalTranscript = '';
+
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+
+            if (finalTranscript) {
+                noteContent.value += (noteContent.value ? ' ' : '') + finalTranscript;
+            }
         };
 
-        recognition.onerror = (event) => {
+        dictationRecognition.onerror = (event) => {
             console.error("Speech error", event);
             micBtn.classList.remove('recording');
+            isDictating = false;
         };
 
-        recognition.onend = () => {
+        dictationRecognition.onend = () => {
             micBtn.classList.remove('recording');
+            isDictating = false;
         };
     } else {
         micBtn.style.display = 'none'; // Hide if not supported
@@ -320,6 +344,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentAddTags = [];
         renderTags(addTagsList, currentAddTags, 'add');
         aiStatus.textContent = '';
+
+        // Reset Voice Recorder
+        if (window.resetVoiceRecorder) window.resetVoiceRecorder();
+        document.getElementById('voiceRecorder').style.display = 'none';
     });
 
     closeAddModal.addEventListener('click', () => {
@@ -334,6 +362,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             imageUploadGroup.style.display = 'block';
         } else if (noteType.value === '[EVENT]') {
             eventFields.style.display = 'block';
+        } else if (noteType.value === '[VOICE]') {
+            document.getElementById('voiceRecorder').style.display = 'block';
         }
     });
 
@@ -355,7 +385,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        if (!content && !imageData && type !== '[EVENT]') return;
+        if (!content && !imageData && type !== '[EVENT]' && type !== '[VOICE]') return;
 
         const newNote = {
             type,
@@ -365,6 +395,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             tags: currentAddTags,
             timestamp: new Date().toISOString()
         };
+
+        if (type === '[VOICE]') {
+            const voiceData = window.getVoiceNoteData();
+            if (voiceData.audioBlob) {
+                newNote.audioBlob = voiceData.audioBlob;
+                newNote.transcript = voiceData.transcript;
+                // Voice notes might not have text content, so allow empty content
+            } else {
+                alert('Please record a voice note.');
+                return;
+            }
+        } else if (!content && !imageData && type !== '[EVENT]') {
+            return;
+        }
 
         await db.addNote(newNote);
         addModal.classList.remove('active');
@@ -376,8 +420,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentViewId = item.id;
         currentNote = item;
         viewType.textContent = item.type;
-        viewContent.textContent = item.content;
         viewTime.textContent = new Date(item.timestamp).toLocaleString();
+
+        if (item.type === '[VOICE]' && item.audioBlob) {
+            viewContent.innerHTML = `
+                <div class="audio-player-custom">
+                    <button class="audio-play-btn" onclick="const audio = this.nextElementSibling; audio.paused ? audio.play() : audio.pause();">▶</button>
+                    <audio src="${URL.createObjectURL(item.audioBlob)}" onended="this.previousElementSibling.textContent='▶'" onplay="this.previousElementSibling.textContent='⏸'" onpause="this.previousElementSibling.textContent='▶'"></audio>
+                    <div class="audio-wave" style="width: 200px;"></div>
+                </div>
+                ${item.transcript ? `<div style="margin-top:15px; font-style:italic; color:#888;">"${item.transcript}"</div>` : ''}
+             `;
+        } else {
+            viewContent.textContent = item.content;
+        }
 
         // Tags
         currentViewTags = item.tags || [];
@@ -521,4 +577,134 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     loadPreferences();
+
+    // --- Voice Recorder Logic ---
+    let mediaRecorder;
+    let audioChunks = [];
+    let audioBlob = null;
+    let recognition;
+    let transcript = "";
+    let isRecording = false;
+    let recordingStartTime;
+    let timerInterval;
+
+    const voiceRecorder = document.getElementById('voiceRecorder');
+    const recorderStatus = document.querySelector('.recorder-status');
+    const recorderTimer = document.querySelector('.recorder-timer');
+    const recordBtn = document.getElementById('recordBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const playPreviewBtn = document.getElementById('playPreviewBtn');
+    const deleteRecordingBtn = document.getElementById('deleteRecordingBtn');
+    const transcriptionPreview = document.getElementById('transcriptionPreview');
+
+    // Initialize Speech Recognition
+    if ('webkitSpeechRecognition' in window) {
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onresult = (event) => {
+            let interimTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    transcript += event.results[i][0].transcript;
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            transcriptionPreview.textContent = transcript + interimTranscript;
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error', event.error);
+        };
+    } else {
+        transcriptionPreview.textContent = "Transcription not supported in this browser.";
+    }
+
+    recordBtn.addEventListener('click', async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            transcript = "";
+            transcriptionPreview.textContent = "";
+
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                playPreviewBtn.disabled = false;
+                deleteRecordingBtn.disabled = false;
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            if (recognition) recognition.start();
+
+            isRecording = true;
+            recorderStatus.textContent = "REC";
+            recorderStatus.classList.add('recording');
+            recordBtn.disabled = true;
+            stopBtn.disabled = false;
+            playPreviewBtn.disabled = true;
+            deleteRecordingBtn.disabled = true;
+
+            recordingStartTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+
+        } catch (err) {
+            console.error("Error accessing microphone:", err);
+            alert("Microphone permission is required to record voice notes.");
+        }
+    });
+
+    stopBtn.addEventListener('click', () => {
+        if (mediaRecorder && isRecording) {
+            mediaRecorder.stop();
+            if (recognition) recognition.stop();
+            isRecording = false;
+            recorderStatus.textContent = "IDLE";
+            recorderStatus.classList.remove('recording');
+            recordBtn.disabled = false;
+            stopBtn.disabled = true;
+            clearInterval(timerInterval);
+        }
+    });
+
+    playPreviewBtn.addEventListener('click', () => {
+        if (audioBlob) {
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
+            audio.play();
+        }
+    });
+
+    deleteRecordingBtn.addEventListener('click', () => {
+        audioBlob = null;
+        transcript = "";
+        transcriptionPreview.textContent = "";
+        recorderTimer.textContent = "00:00";
+        playPreviewBtn.disabled = true;
+        deleteRecordingBtn.disabled = true;
+    });
+
+    function updateTimer() {
+        const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+        const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+        const seconds = (elapsed % 60).toString().padStart(2, '0');
+        recorderTimer.textContent = `${minutes}:${seconds}`;
+    }
+
+    // Expose for use in saveNote
+    window.getVoiceNoteData = () => {
+        return { audioBlob, transcript };
+    };
+
+    window.resetVoiceRecorder = () => {
+        if (isRecording) stopBtn.click();
+        deleteRecordingBtn.click();
+    };
 });

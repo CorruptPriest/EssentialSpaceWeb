@@ -91,6 +91,7 @@
                         <select id="noteType">
                             <option value="[NOTE]">[NOTE]</option>
                             <option value="[PHOTO]">[PHOTO]</option>
+                            <option value="[VOICE]">[VOICE]</option>
                             <option value="[EVENT]">[EVENT]</option>
                             <option value="[IDEA]">[IDEA]</option>
                             <option value="[TASK]">[TASK]</option>
@@ -102,6 +103,35 @@
                         <div class="form-group">
                             <label>DATE & TIME</label>
                             <input type="datetime-local" id="eventDate">
+                        </div>
+                    </div>
+
+                    <!-- Voice Recorder UI -->
+                    <div id="voiceRecorder" style="display: none;">
+                        <div class="recorder-container">
+                            <div class="recorder-status">IDLE</div>
+                            <div class="recorder-timer">00:00</div>
+                            <div class="recorder-visualizer">
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                            </div>
+                            <div class="recorder-controls">
+                                <button id="recordBtn" class="rec-btn" title="Record"></button>
+                                <button id="stopBtn" class="stop-btn" disabled title="Stop"></button>
+                                <button id="playPreviewBtn" class="play-btn" disabled title="Play Preview">▶</button>
+                                <button id="deleteRecordingBtn" class="del-btn" disabled title="Delete">×</button>
+                            </div>
+                            <div id="transcriptionPreview" class="transcription-preview"></div>
                         </div>
                     </div>
 
